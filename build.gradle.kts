@@ -12,6 +12,7 @@ repositories {
 dependencies {
     testImplementation(kotlin("test"))
     implementation(kotlin("stdlib"))
+    implementation("com.itextpdf:itext7-core:7.2.5")
 }
 
 tasks.test {

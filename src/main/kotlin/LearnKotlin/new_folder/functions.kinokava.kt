@@ -8,6 +8,12 @@ import javax.swing.table.DefaultTableModel
 import javax.swing.*
 import java.awt.Color
 import java.awt.Font
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Paragraph
+import java.io.File
+import java.text.SimpleDateFormat
 
 fun loadKinokava(tableModel: DefaultTableModel) {
     val url = "jdbc:mysql://localhost:3306/KotlinUser"
@@ -138,4 +144,69 @@ fun deleteFilm(tableModel: DefaultTableModel, table: JTable, textfieldTitle: JTe
         println("Row wasn't selected")
     }
 
+}
+
+fun generateFilmPdf(title: String, description: String, year: Int, fileName: String, sessionDate: String) {
+    val pdfPath = "$fileName.pdf"
+
+    try {
+        PdfWriter(pdfPath).use { writer ->
+            val pdfDocument = PdfDocument(writer)
+            val document = Document(pdfDocument)
+
+            document.add(Paragraph("Film Information").setBold())
+            document.add(Paragraph("Title: $title"))
+            document.add(Paragraph("Description: $description"))
+            document.add(Paragraph("Year: $year"))
+            document.add(Paragraph("Session Date: $sessionDate"))
+
+            document.close()
+        }
+        println("PDF file created: $pdfPath")
+    } catch (e: Exception) {
+        e.printStackTrace()
+        println("Error while creating PDF: ${e.message}")
+    }
+}
+
+fun brooneFilm(tableModel: DefaultTableModel, table: JTable, sessionDateSpinner: JSpinner) {
+    val url = "jdbc:mysql://localhost:3306/KotlinUser"
+    val user = "KotlinUser"
+    val password = "12345"
+    var connection: Connection? = null
+
+    val selectedRow = table.selectedRow
+    if (selectedRow != -1) {
+        val filmId = table.getValueAt(selectedRow, 0).toString()
+        try {
+            connection = DriverManager.getConnection(url, user, password)
+            val sql = "SELECT Title, Description, ReleaseYear, SessionDate FROM kinokava WHERE Id = ?"
+            val preparedStatement = connection.prepareStatement(sql)
+            preparedStatement.use { stmt ->
+                stmt.setString(1, filmId)
+                val resultSet = stmt.executeQuery()
+                resultSet.use { rs ->
+                    if (rs.next()) {
+                        val title = rs.getString("Title")
+                        val description = rs.getString("Description")
+                        val year = rs.getInt("ReleaseYear")
+
+                        val sessionDate = rs.getTimestamp("SessionDate")?.let {
+                            SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(it)
+                        } ?: "N/A"
+
+                        generateFilmPdf(title, description, year, "Film_$filmId", sessionDate)
+                    } else {
+                        println("Film with ID $filmId not found!")
+                    }
+                }
+            }
+        } catch (e: SQLException) {
+            e.printStackTrace()
+        } finally {
+            connection?.close()
+        }
+    } else {
+        println("No film selected in the table!")
+    }
 }

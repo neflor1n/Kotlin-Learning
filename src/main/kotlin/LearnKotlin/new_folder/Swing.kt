@@ -7,6 +7,8 @@ import javax.swing.table.DefaultTableModel
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.util.Calendar
+import java.util.Date
 import javax.management.relation.Role
 
 fun main() {
@@ -291,7 +293,16 @@ fun openUserFrame(usernameField: JTextField, passwordField: JPasswordField) {
         frame.add(sessionDateLabel)
         frame.add(sessionDate)
     } else {
-        
+
+        val sessionDateSpinner = JSpinner(SpinnerDateModel(Date(), null, null, Calendar.HOUR_OF_DAY))
+        val brooneButton = JButton("Broone the film").apply{
+            font = font.deriveFont(Font.PLAIN, 16f)
+            setBounds(50, 200, 200, 30)
+        }
+        brooneButton.addActionListener {
+            brooneFilm(tableModel, table, sessionDateSpinner)
+        }
+        frame.add(brooneButton)
     }
 
     frame.add(titlelabel)
